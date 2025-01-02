@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Application.Interfaces;
 using Domain;
+using Domain.Models;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -13,7 +14,10 @@ public class JwtProvider(IOptions<JwtOptions> options) : IJwtProvider
     private readonly JwtOptions _options = options.Value;
     public string GenerateToken(User user)
     {
-        Claim[] claims = [new("userId", user.Id.ToString())];
+        Claim[] claims = 
+        [
+            new (CustomClaims.UserId, user.Id.ToString())
+        ];
 
         var signingCredentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SecretKey)),

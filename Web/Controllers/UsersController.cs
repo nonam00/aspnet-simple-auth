@@ -1,4 +1,5 @@
-﻿using Application.Users.Queries.Login;
+﻿using Application.Users.Commands.CreateUser;
+using Application.Users.Queries.Login;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Web.Models;
@@ -9,12 +10,13 @@ namespace Web.Controllers;
 public class UsersController : BaseController
 {
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromForm] RegisterDto registerDto)
+    public async Task<IActionResult> Register(RegisterDto registerDto)
     {
-        var command = new LoginQuery
+        var command = new CreateUserCommand
         {
             Email = registerDto.Email,
-            Password = registerDto.Password
+            Password = registerDto.Password,
+            Role = registerDto.Role
         };
         var accessToken = await Mediator.Send(command);
 
@@ -29,7 +31,7 @@ public class UsersController : BaseController
     }
     
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromForm] LoginDto loginDto)
+    public async Task<IActionResult> Login(LoginDto loginDto)
     {
         var query = new LoginQuery
         {
@@ -48,10 +50,16 @@ public class UsersController : BaseController
         return Ok();
     }
     
-    [HttpPost("logout"), Authorize]
+    [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
         await Task.Run(() => Parallel.ForEach(Request.Cookies.Keys, Response.Cookies.Delete));
         return StatusCode(205);
+    }
+    
+    [HttpGet, Authorize(Policy = "Admin")]
+    public async Task<IActionResult> GetAllUserData()
+    {
+        return Ok();
     }
 }

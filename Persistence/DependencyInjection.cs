@@ -11,6 +11,8 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.Configure<AuthorizationOptions>(configuration.GetRequiredSection(nameof(AuthorizationOptions)));
+        
         var connectionString = configuration.GetConnectionString("PostgresDb");
 
         services.AddDbContext<AppDbContext>(options =>

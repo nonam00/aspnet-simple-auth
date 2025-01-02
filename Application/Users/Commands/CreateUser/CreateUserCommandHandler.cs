@@ -1,5 +1,5 @@
 ﻿using Application.Interfaces;
-using Domain;
+using Domain.Models;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,11 +27,16 @@ public class CreateUserCommandHandler(
 
         var hashedPassword = _passwordHasher.Generate(request.Password);
 
+        var role = await _dbContext.Roles
+            .SingleOrDefaultAsync(r => r.Id == (int)request.Role, cancellationToken)
+            ?? throw new InvalidOperationException("No role exists");
+        
         var user = new User
         {
             Id = Guid.NewGuid(),
             Email = request.Email,
-            PasswordHash = hashedPassword
+            PasswordHash = hashedPassword,
+            Roles = [role]
         };
 
         await _dbContext.Users.AddAsync(user, cancellationToken);

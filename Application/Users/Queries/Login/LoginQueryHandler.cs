@@ -18,9 +18,9 @@ public class LoginQueryHandler(
         CancellationToken cancellationToken)
     {
         var user = await _dbContext.Users
-                       .AsNoTracking()
-                       .SingleOrDefaultAsync(u => u.Email == request.Email, cancellationToken)
-                   ?? throw new Exception("Invalid email or password. Please try again.");
+            .AsNoTracking()
+            .SingleOrDefaultAsync(u => u.Email == request.Email, cancellationToken) 
+            ?? throw new Exception("Invalid email or password. Please try again.");
 
         var check = _passwordHasher.Verify(request.Password, user.PasswordHash);
 

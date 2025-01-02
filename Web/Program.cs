@@ -1,9 +1,12 @@
 using System.Text;
-using Application;
-using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.IdentityModel.Tokens;
+
+using Domain.Enums;
+using Application;
+using Infrastructure;
 using Persistence;
 using Web.Middleware;
 
@@ -13,17 +16,6 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddPersistence(builder.Configuration);
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("MyPolicy", policy =>
-    {
-        policy.WithOrigins("http://localhost:3000")
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
-    });
-});
-
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -32,12 +24,10 @@ builder.Services.AddAuthentication(options =>
 })
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
-        // Getting options for JWT crypt from configuration (user secret)
         var jwtOptions = builder.Configuration.GetSection(nameof(JwtOptions)).Get<JwtOptions>();
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            // TODO: replace with real issuer and real audience 
             ValidateIssuer = false,
             ValidateAudience = false,
             ValidateLifetime = true,
@@ -46,7 +36,6 @@ builder.Services.AddAuthentication(options =>
                 Encoding.UTF8.GetBytes(jwtOptions!.SecretKey))
         };
         
-        // Getting JWT token from request cookies
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
@@ -64,16 +53,38 @@ builder.Services.AddAuthentication(options =>
         options.SaveToken = true;
     });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("User", policy =>
+    {
+        policy.AddRequirements(new PermissionRequirement([PermissionEnum.Read]));
+    });
+    options.AddPolicy("Admin", policy =>
+    {
+        policy.AddRequirements(new PermissionRequirement([
+            PermissionEnum.Read,
+            PermissionEnum.Create,
+            PermissionEnum.Update,
+            PermissionEnum.Delete]));
+    });
+});
+
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
 builder.Services.AddControllersWithViews(); 
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseExceptionHandler();
 app.UseRouting();
-app.UseCors("MyPolicy");
 
 app.UseCookiePolicy(new CookiePolicyOptions
 {
