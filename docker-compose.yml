@@ -1,0 +1,27 @@
+﻿services:
+  db:
+    image: postgres:16
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_DB=auth_learn
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    container_name: postgresql_db
+
+  webapi:
+    build:
+      context: .
+      dockerfile: Web/Dockerfile
+    restart: always
+    ports:
+      - "5000:8080"
+    container_name: aspnet_web_api
+    depends_on:
+      - db
+      
+volumes:
+  db_data:
